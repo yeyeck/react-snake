@@ -12,15 +12,13 @@ class Board extends React.Component {
       row: 30,
       column: 30,
       snake: [{x : 1, y: 0}, {x: 0, y: 0}],
-      length: 2,
       score: 0,
-      state: true,
+      state: false,
       food: {
-        x: 6,
-        y: 6,
+        x: null,
+        y: null,
       },
-      direction: 'right',
-      timer: {}
+      direction: 'right'
     }
   }
 
@@ -30,71 +28,48 @@ class Board extends React.Component {
     if (!this.state.state) {
       return;
     }
-    let head = snake[0]
-    console.log(snake)
-    if (this.state.direction === 'right') {
-      if ((head.x + 1) > this.state.column - 1) {
-        console.log('clear')
-        this.setState({state: false})
-        clearInterval(this.timer)
+    const head = snake[0]
+    // 计算下一个点
+    let next = {x: head.x, y: head.y}
+    switch (this.state.direction) {
+      case 'right':
+        next.x += 1
+        break
+      case 'down':
+        next.y += 1
+        break
+      case 'left':
+        next.x -= 1
+        break
+      case 'up':
+        next.y -= 1
+        break
+      default:
+        break
+    }
+
+    // 判断下一个点是否合法
+    // 1. 不能自己咬自己
+    // 2. 不能超过边界
+    if (!this.isValid(next)) {
+      console.log(next)
+      this.setState({state: false})
+      clearInterval(this.timer)
+    } else {
+      // 下一个点合法， 加到头
+      snake.unshift(next)
+      const food = this.state.food
+      if (next.x !== food.x  || next.y !== food.y) {
+        // 没有吃到food，移除尾巴
+        snake.pop()
       } else {
-        snake.unshift({x: head.x + 1, y: head.y})
-        
-        const food = this.state.food
-        if (head.x + 1 !== food.x || head.y !== food.y) {
-          snake.pop()
-        } else {
-          this.incrementScore()
-          this.generateFood()
-        }
-      }
-    } else if (this.state.direction === 'down') {
-      if ((head.y + 1) > this.state.row -1) {
-        console.log('clear')
-        this.setState({state: false})
-        clearInterval(this.timer)
-      } else {
-        snake.unshift({x: head.x, y: head.y + 1})
-        const food = this.state.food
-        if (head.x!== food.x || (head.y + 1) !== food.y) {
-          snake.pop()
-        } else {
-          this.incrementScore()
-          this.generateFood()
-        }
-      }
-    } else if (this.state.direction === 'left') {
-      if ((head.x - 1) < 0) {
-        console.log('clear')
-        this.setState({state: false})
-        clearInterval(this.timer)
-      } else {
-        snake.unshift({x: head.x - 1, y: head.y})
-        const food = this.state.food
-        if ((head.x - 1) !== food.x || head.y !== food.y) {
-          snake.pop()
-        } else {
-          this.incrementScore()
-          this.generateFood()
-        }
-      }
-    } else if (this.state.direction === 'up') {
-      if ((head.y - 1) < 0) {
-        console.log('clear')
-        this.setState({state: false})
-        clearInterval(this.timer)
-      } else {
-        snake.unshift({x: head.x, y: head.y - 1})
-        const food = this.state.food
-        if (head.x !== food.x || (head.y - 1) !== food.y) {
-          snake.pop()
-        } else {
-          this.incrementScore()
-          this.generateFood()
-        }
+        // 吃到 food， 得分，重新生成food
+        this.incrementScore()
+        this.generateFood()
       }
     }
     this.setState({snake: snake})
+    // 强行刷新
     this.forceUpdate()
   }
 
@@ -125,12 +100,29 @@ class Board extends React.Component {
           break
       }
     }.bind(this)
+  }
 
+  start() {
+    this.generateFood()
+    this.setState({
+      snake: [{x : 1, y: 0}, {x: 0, y: 0}],
+      state: true,
+      score: 0,
+      direction: 'right'
+    })
     this.timer =  setInterval(() => {
       this.run()
     }, 300)
   }
-
+  // 判断是否是合法的下一个点
+  isValid(next) {
+    const row = this.state.row
+    const column = this.state.column
+    if (this.isSnake(next.x, next.y)) {
+      return false
+    }
+    return next.x < column && next.y < row && next.x >= 0 && next.y >= 0
+  }
   incrementScore() {
     this.setState({score: this.state.score + 1})
   }
@@ -182,7 +174,10 @@ class Board extends React.Component {
 
     return (
       <>
-      <div>score: {this.state.score}</div>
+      <div className="panel" >
+        <span>score: {this.state.score}</span>
+        <button onClick={() => this.start()} disabled={this.state.state}>开始</button>
+      </div>
       <div>
         {elements}
       </div>

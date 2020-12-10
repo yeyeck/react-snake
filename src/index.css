@@ -42,3 +42,7 @@
   width: 20px;
   display: inline-block;
 }
+
+.panel {
+  margin-bottom: 10px;
+}
